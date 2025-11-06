@@ -28,6 +28,7 @@ specs:
 - openmpi
 {% endif %}
 - libblas * *mkl
+- tensorflow >=2.19
 # jax
 - jax
 - jaxlib * {{ variant }}*
