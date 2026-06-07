@@ -12,6 +12,7 @@ name: deepmd-kit
 version: {{ version }}-{{ variant_version }}
 
 channels:
+- https://conda.anaconda.org/conda-forge/label/deepmd-kit_rc
 - https://conda.anaconda.org/conda-forge
 
 specs:
