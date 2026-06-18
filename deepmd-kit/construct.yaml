@@ -1,5 +1,10 @@
 {% set version = os.environ.get("VERSION") %}
 {% set cuda_version = os.environ.get("CUDA_VERSION") %}
+{% set backend = os.environ.get("DP_BACKEND", "all") %}
+{% set torch_version = os.environ.get("TORCH_VERSION", "") %}
+{% set with_tf = backend in ("all","tensorflow") %}
+{% set with_pt = backend in ("all","pytorch") and torch_version %}
+{% set with_jax = backend in ("all","jax") %}
 {% if cuda_version == '' %}
 {% set variant = "cpu" %}
 {% set variant_version = "cpu" %}
@@ -29,12 +34,18 @@ specs:
 - openmpi
 {% endif %}
 - libblas * *mkl
+{% if with_tf %}
 - tensorflow >=2.19
-# jax
+{% endif %}
+{% if with_pt %}
+- pytorch {{ torch_version }}
+{% endif %}
+{% if with_jax %}
 - jax
 - jaxlib * {{ variant }}*
 - flax >=0.10.0
 - orbax-checkpoint
+{% endif %}
 
 ignore_duplicate_files: True
 
