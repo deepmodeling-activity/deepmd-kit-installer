@@ -5,18 +5,26 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build ${{ matrix.name }} ${{ matrix.cuda }}
+    name: Build ${{ matrix.name }} ${{ matrix.variant }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: deepmd-kit
+            variant: cpu
+            cuda: ''
             platform: linux-64
+          # Use the latest toolkit release in each supported CUDA major series.
           - name: deepmd-kit
+            variant: cuda12
             cuda: '12.9'
             platform: linux-64
+          - name: deepmd-kit
+            variant: cuda13
+            cuda: '13.3'
+            platform: linux-64
     env:
-      version: "3.2.0b0"
+      version: "3.2.0"
     steps:
     - name: Free Disk Space (Ubuntu)
       uses: insightsengineering/disk-space-reclaimer@v1
