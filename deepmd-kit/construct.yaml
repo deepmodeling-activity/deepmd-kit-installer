@@ -12,7 +12,6 @@ name: deepmd-kit
 version: {{ version }}-{{ variant_version }}
 
 channels:
-- https://conda.anaconda.org/conda-forge/label/deepmd-kit_rc
 - https://conda.anaconda.org/conda-forge
 
 specs:
@@ -32,7 +31,12 @@ specs:
 - tensorflow >=2.19
 # jax
 - jax
+{% if cuda_version.startswith("13.") %}
+# conda-forge does not yet provide CUDA 13 jaxlib builds, so keep JAX available on CPU.
+- jaxlib * cpu*
+{% else %}
 - jaxlib * {{ variant }}*
+{% endif %}
 - flax >=0.10.0
 - orbax-checkpoint
 

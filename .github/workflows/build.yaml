@@ -5,18 +5,26 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build ${{ matrix.name }} ${{ matrix.cuda }}
+    name: Build ${{ matrix.name }} ${{ matrix.variant }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: deepmd-kit
+            variant: cpu
+            cuda: ''
             platform: linux-64
+          # Use the latest toolkit release in each supported CUDA major series.
           - name: deepmd-kit
+            variant: cuda12
             cuda: '12.9'
             platform: linux-64
+          - name: deepmd-kit
+            variant: cuda13
+            cuda: '13.3'
+            platform: linux-64
     env:
-      version: "3.2.0b0"
+      version: "3.2.0"
     steps:
     - name: Free Disk Space (Ubuntu)
       uses: insightsengineering/disk-space-reclaimer@v1
@@ -43,8 +51,29 @@ jobs:
         CONDA_OVERRIDE_CUDA: ${{ matrix.cuda }}
         CONDA_OVERRIDE_GLIBC: "2.28"
         CONDA_VERBOSITY: 3
-    - run: export NAME=`ls deepmd-kit-*.sh` && split -a 1 -d -n 3 ${NAME} ${NAME}. && rm deepmd-kit-*.sh
-      if: matrix.cuda != ''
+    - name: Split oversized installer
+      shell: bash
+      run: |
+        shopt -s nullglob
+        installers=(deepmd-kit-*.sh)
+        if (( ${#installers[@]} != 1 )); then
+          echo "Expected exactly one installer, found ${#installers[@]}" >&2
+          exit 1
+        fi
+
+        installer=${installers[0]}
+        # GitHub Releases limits each asset to 2 GiB; leave some upload margin.
+        chunk_size=$((1900 * 1024 * 1024))
+        installer_size=$(stat --format=%s -- "$installer")
+        if (( installer_size > chunk_size )); then
+          chunk_count=$(((installer_size + chunk_size - 1) / chunk_size))
+          echo "Splitting $installer into $chunk_count release assets."
+          split --bytes="$chunk_size" --numeric-suffixes=0 --suffix-length=2 \
+            -- "$installer" "$installer."
+          rm -- "$installer"
+        else
+          echo "Keeping $installer as one release asset."
+        fi
     - name: Upload to release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
